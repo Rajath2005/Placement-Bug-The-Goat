@@ -1,16 +1,20 @@
 import { GoogleGenAI } from "@google/genai";
 import { GeneratedAnswer } from "../types";
 
-// Access the key. Vite replaces process.env.API_KEY with the string value at build time.
-const apiKey = process.env.API_KEY;
+// Access the system key from build time env
+const systemApiKey = process.env.API_KEY;
 
 export const getAnswerForQuestion = async (
   questionText: string,
-  contextTag: string
+  contextTag: string,
+  userApiKey?: string | null
 ): Promise<GeneratedAnswer> => {
-  // Check if the key was actually injected during the build
+  
+  // Prioritize user key if provided, otherwise use system key
+  const apiKey = userApiKey || systemApiKey;
+
   if (!apiKey) {
-    throw new Error("API Key is missing. Go to Netlify > Site settings > Environment variables, add 'API_KEY', and trigger a new deploy.");
+    throw new Error("MISSING_KEY");
   }
 
   const ai = new GoogleGenAI({ apiKey });
@@ -47,10 +51,16 @@ export const getAnswerForQuestion = async (
 
   } catch (error: any) {
     console.error("Gemini API Error:", error);
-    // Provide more specific error messages
-    if (error.message && (error.message.includes('403') || error.message.includes('key'))) {
-        throw new Error("Invalid API Key. Please check that your Google AI Studio key is correct in Netlify settings.");
+    
+    // Check for Rate Limit (429) or Quota issues or Permission denied (403)
+    const msg = error.message?.toLowerCase() || "";
+    if (msg.includes('429') || msg.includes('quota') || msg.includes('resource exhausted')) {
+        throw new Error("QUOTA_EXCEEDED");
     }
+    if (msg.includes('403') || msg.includes('api key') || msg.includes('permission')) {
+        throw new Error("INVALID_KEY");
+    }
+    
     throw new Error(`Failed to fetch answer: ${error.message || "Unknown error"}`);
   }
 };

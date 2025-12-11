@@ -5,17 +5,108 @@ import { getAnswerForQuestion } from './services/geminiService';
 
 // --- Components ---
 
-// 1. Sidebar Component
+// 1. API Key Modal Component
+const ApiKeyModal = ({ 
+  isOpen, 
+  onClose, 
+  userApiKey, 
+  onSave 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  userApiKey: string; 
+  onSave: (key: string) => void;
+}) => {
+  const [inputKey, setInputKey] = useState(userApiKey);
+
+  useEffect(() => {
+    setInputKey(userApiKey);
+  }, [userApiKey]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      
+      {/* Modal */}
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            API Key Settings
+          </h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+          </button>
+        </div>
+        
+        <div className="p-6">
+          <p className="text-sm text-slate-600 mb-4 leading-relaxed">
+            This app uses a shared system key which may hit usage limits. To ensure uninterrupted access, you can provide your own 
+            <strong className="text-slate-800"> FREE Google Gemini API Key</strong>.
+          </p>
+          
+          <div className="mb-4">
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Your API Key</label>
+            <input 
+              type="password" 
+              value={inputKey}
+              onChange={(e) => setInputKey(e.target.value)}
+              placeholder="AIzaSy..."
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono"
+            />
+          </div>
+          
+          <div className="text-xs text-slate-500 bg-blue-50 p-3 rounded-lg border border-blue-100 flex gap-2 items-start">
+             <svg className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+             <span>
+               Don't have a key? Get one for free at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-blue-600 font-medium hover:underline">Google AI Studio</a>.
+               Your key is stored locally in your browser.
+             </span>
+          </div>
+        </div>
+        
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+          <button 
+            onClick={() => {
+              setInputKey('');
+              onSave('');
+              onClose();
+            }}
+            className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          >
+            Clear Key
+          </button>
+          <button 
+            onClick={() => {
+              onSave(inputKey);
+              onClose();
+            }}
+            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-lg shadow-sm shadow-indigo-200 transition-colors"
+          >
+            Save Key
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 2. Sidebar Component
 const Sidebar = ({ 
   selectedCategory, 
   onSelectCategory, 
   isOpen, 
-  setIsOpen 
+  setIsOpen,
+  onOpenSettings
 }: { 
   selectedCategory: CategoryType; 
   onSelectCategory: (c: CategoryType) => void;
   isOpen: boolean;
   setIsOpen: (o: boolean) => void;
+  onOpenSettings: () => void;
 }) => {
   const categories: CategoryType[] = ['All', 'Java', 'C++', 'Aptitude', 'Algorithms', 'Data Structures'];
 
@@ -56,33 +147,42 @@ const Sidebar = ({
         </nav>
         
         {/* Footer / Credits */}
-        <div className="absolute bottom-0 left-0 w-full p-6 border-t border-slate-100 bg-slate-50/50">
-           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Designed By</p>
-           
-           <div className="flex flex-col gap-2">
-             <a 
-               href="https://github.com/Rajath2005" 
-               target="_blank" 
-               rel="noopener noreferrer"
-               className="flex items-center gap-2 text-xs font-medium text-slate-600 hover:text-indigo-600 transition-colors group"
-             >
-               <div className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 group-hover:border-indigo-200 group-hover:text-indigo-500 transition-colors">
-                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-               </div>
-               Rajath2005
-             </a>
-             
-             <a 
-               href="https://github.com/Binary-Explorers" 
-               target="_blank" 
-               rel="noopener noreferrer"
-               className="flex items-center gap-2 text-xs font-medium text-slate-600 hover:text-indigo-600 transition-colors group"
-             >
-               <div className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 group-hover:border-indigo-200 group-hover:text-indigo-500 transition-colors">
-                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-               </div>
-               Binary-Explorers
-             </a>
+        <div className="absolute bottom-0 left-0 w-full p-6 border-t border-slate-100 bg-slate-50/50 flex flex-col gap-4">
+           {/* Settings Button */}
+           <button 
+             onClick={onOpenSettings}
+             className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 text-xs font-medium hover:border-indigo-300 hover:text-indigo-600 transition-all shadow-sm"
+           >
+             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+             Configure API Key
+           </button>
+
+           <div>
+             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Designed By</p>
+             <div className="flex flex-col gap-2">
+               <a 
+                 href="https://github.com/Rajath2005" 
+                 target="_blank" 
+                 rel="noopener noreferrer"
+                 className="flex items-center gap-2 text-xs font-medium text-slate-600 hover:text-indigo-600 transition-colors group"
+               >
+                 <div className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 group-hover:border-indigo-200 group-hover:text-indigo-500 transition-colors">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                 </div>
+                 Rajath2005
+               </a>
+               <a 
+                 href="https://github.com/Binary-Explorers" 
+                 target="_blank" 
+                 rel="noopener noreferrer"
+                 className="flex items-center gap-2 text-xs font-medium text-slate-600 hover:text-indigo-600 transition-colors group"
+               >
+                 <div className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 group-hover:border-indigo-200 group-hover:text-indigo-500 transition-colors">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                 </div>
+                 Binary-Explorers
+               </a>
+             </div>
            </div>
         </div>
       </div>
@@ -90,7 +190,7 @@ const Sidebar = ({
   );
 };
 
-// 2. Code Block Component
+// 3. Code Block Component
 const CodeBlock: React.FC<{ language: string; code: string }> = ({ language, code }) => {
   const [copied, setCopied] = useState(false);
 
@@ -101,7 +201,6 @@ const CodeBlock: React.FC<{ language: string; code: string }> = ({ language, cod
   };
 
   // Determine correct Prism class
-  // Added logic for Python and generic 'algorithm' (which often looks like python/pseudocode)
   let prismLang = 'language-none';
   const lowerLang = language.toLowerCase();
 
@@ -114,11 +213,9 @@ const CodeBlock: React.FC<{ language: string; code: string }> = ({ language, cod
   } else if (lowerLang.includes('py') || lowerLang.includes('python')) {
     prismLang = 'language-python';
   } else if (lowerLang.includes('algo') || lowerLang.includes('pseudo')) {
-    // Algorithms/Pseudocode often look best with Python highlighting due to lack of braces
     prismLang = 'language-python'; 
   }
 
-  // Formatting the display language label
   const displayLang = 
     lowerLang.includes('cpp') || lowerLang.includes('c++') ? 'C++' :
     lowerLang.includes('py') ? 'PYTHON' :
@@ -164,10 +261,9 @@ const CodeBlock: React.FC<{ language: string; code: string }> = ({ language, cod
   );
 };
 
-// 3. Answer Display Component
-const AnswerView = ({ answer, loading, error }: { answer: GeneratedAnswer | null, loading: boolean, error: string | null }) => {
+// 4. Answer Display Component
+const AnswerView = ({ answer, loading, error, onOpenSettings }: { answer: GeneratedAnswer | null, loading: boolean, error: string | null, onOpenSettings: () => void }) => {
   
-  // Effect to trigger Prism highlighting when content changes
   useEffect(() => {
     // @ts-ignore
     if (typeof window !== 'undefined' && window.Prism && answer) {
@@ -187,14 +283,8 @@ const AnswerView = ({ answer, loading, error }: { answer: GeneratedAnswer | null
              </svg>
           </div>
         </div>
-        
         <div className="flex items-center gap-1 mb-2">
            <span className="text-sm font-semibold text-slate-700">AI is crafting your solution</span>
-           <span className="flex gap-0.5 mt-1">
-             <span className="w-1 h-1 bg-slate-400 rounded-full animate-[bounce_1s_infinite_0ms]"></span>
-             <span className="w-1 h-1 bg-slate-400 rounded-full animate-[bounce_1s_infinite_200ms]"></span>
-             <span className="w-1 h-1 bg-slate-400 rounded-full animate-[bounce_1s_infinite_400ms]"></span>
-           </span>
         </div>
         <p className="text-xs text-slate-500 max-w-xs mx-auto">
           Analyzing problem constraints & generating optimized code...
@@ -204,6 +294,30 @@ const AnswerView = ({ answer, loading, error }: { answer: GeneratedAnswer | null
   }
 
   if (error) {
+    const isQuotaError = error.includes("QUOTA") || error.includes("LIMIT") || error.includes("KEY");
+    
+    if (isQuotaError) {
+        return (
+            <div className="mt-4 p-5 bg-orange-50 rounded-xl border border-orange-200 flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left animate-in fade-in">
+              <div className="bg-orange-100 p-2 rounded-full text-orange-600">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-bold text-orange-800 mb-1">System Capacity Reached</h4>
+                <p className="text-xs text-orange-700 mb-3">
+                  The shared system key has hit its usage limit. To continue solving questions without interruption, please provide your own free Gemini API key.
+                </p>
+                <button 
+                  onClick={onOpenSettings}
+                  className="text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg transition-colors shadow-sm"
+                >
+                  Enter Your API Key
+                </button>
+              </div>
+            </div>
+        )
+    }
+
     return (
       <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100 flex items-start gap-2">
         <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -214,36 +328,25 @@ const AnswerView = ({ answer, loading, error }: { answer: GeneratedAnswer | null
 
   if (!answer) return null;
 
-  // Format content to separate code blocks from text
   const formatContent = (text: string) => {
-    // Regex to split by markdown code blocks: ```lang ... ```
-    // Captures the language (optional) and the code
     const parts = text.split(/(```[a-zA-Z]*[\s\S]*?```)/g);
-    
     return parts.map((part, index) => {
-      // Check if it's a code block
       if (part.startsWith('```')) {
         const match = part.match(/^```([a-zA-Z]*)\n([\s\S]*?)```$/);
         if (match) {
-          const language = match[1] || 'text'; // Default to text/none if lang not specified
+          const language = match[1] || 'text';
           const code = match[2];
           return <CodeBlock key={index} language={language} code={code} />;
         }
-        // Fallback if regex fails but starts with ticks
         return <CodeBlock key={index} language="text" code={part.replace(/```/g, '')} />;
       }
-
-      // Render Text parts with simple formatting
       if (!part.trim()) return null;
-
-      // Handle bold text **text**
       const withBold = part.split(/(\*\*.*?\*\*)/g).map((subPart, i) => {
           if (subPart.startsWith('**') && subPart.endsWith('**')) {
               return <strong key={i} className="text-slate-900 font-semibold">{subPart.slice(2, -2)}</strong>;
           }
           return subPart;
       });
-
       return <p key={index} className="mb-3 text-slate-600 leading-relaxed whitespace-pre-wrap">{withBold}</p>;
     });
   };
@@ -261,8 +364,8 @@ const AnswerView = ({ answer, loading, error }: { answer: GeneratedAnswer | null
   );
 };
 
-// 4. Question Card Component
-const QuestionCard: React.FC<{ question: Question }> = ({ question }) => {
+// 5. Question Card Component
+const QuestionCard: React.FC<{ question: Question, userApiKey: string, onOpenSettings: () => void }> = ({ question, userApiKey, onOpenSettings }) => {
   const [expanded, setExpanded] = useState(false);
   const [answer, setAnswer] = useState<GeneratedAnswer | null>(null);
   const [status, setStatus] = useState<LoadingState>(LoadingState.IDLE);
@@ -273,22 +376,38 @@ const QuestionCard: React.FC<{ question: Question }> = ({ question }) => {
       setExpanded(false);
       return;
     }
-
     setExpanded(true);
     
-    // Only fetch if we haven't already fetched successfully
+    // If not loaded or if previously errored out due to key issues, retry
     if (status !== LoadingState.SUCCESS) {
       setStatus(LoadingState.LOADING);
+      setErrorMsg(null);
       try {
-        const result = await getAnswerForQuestion(question.text, question.category);
+        // Pass userApiKey (empty string if not set)
+        const result = await getAnswerForQuestion(question.text, question.category, userApiKey);
         setAnswer(result);
         setStatus(LoadingState.SUCCESS);
       } catch (err: any) {
-        setErrorMsg(err.message || "Something went wrong");
+        let msg = err.message || "Something went wrong";
+        if (msg === "QUOTA_EXCEEDED") msg = "System quota exceeded. Please use your own API Key.";
+        if (msg === "INVALID_KEY") msg = "Invalid API Key. Please check your settings.";
+        if (msg === "MISSING_KEY") msg = "No API Key configured. Please add one in settings.";
+        
+        setErrorMsg(msg);
         setStatus(LoadingState.ERROR);
       }
     }
   };
+
+  // If user updates key while a card is in error state, auto-retry logic could go here, 
+  // but simpler to just let them click 'Solve' again or just re-expand.
+  // We can reset status if key changes:
+  useEffect(() => {
+    if (status === LoadingState.ERROR && (errorMsg?.includes('quota') || errorMsg?.includes('Key'))) {
+        setStatus(LoadingState.IDLE);
+        setExpanded(false); // Collapse so they click solve again to retry cleanly
+    }
+  }, [userApiKey]);
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '';
@@ -359,6 +478,7 @@ const QuestionCard: React.FC<{ question: Question }> = ({ question }) => {
             answer={answer} 
             loading={status === LoadingState.LOADING} 
             error={errorMsg}
+            onOpenSettings={onOpenSettings}
           />
         )}
       </div>
@@ -366,12 +486,31 @@ const QuestionCard: React.FC<{ question: Question }> = ({ question }) => {
   );
 };
 
-// 5. Main App Layout
+// 6. Main App Layout
 function App() {
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sortBy, setSortBy] = useState<'date-asc' | 'date-desc'>('date-asc');
+  
+  // Settings / API Key State
+  const [userApiKey, setUserApiKey] = useState('');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // Load API key from local storage on mount
+  useEffect(() => {
+    const storedKey = localStorage.getItem('gemini_user_api_key');
+    if (storedKey) setUserApiKey(storedKey);
+  }, []);
+
+  const handleSaveKey = (key: string) => {
+    setUserApiKey(key);
+    if (key) {
+        localStorage.setItem('gemini_user_api_key', key);
+    } else {
+        localStorage.removeItem('gemini_user_api_key');
+    }
+  };
 
   // Filter logic
   const filteredQuestions = questions.filter(q => {
@@ -392,12 +531,20 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex font-sans">
+      <ApiKeyModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)}
+        userApiKey={userApiKey}
+        onSave={handleSaveKey}
+      />
+
       {/* Sidebar Navigation */}
       <Sidebar 
         selectedCategory={selectedCategory} 
         onSelectCategory={setSelectedCategory}
         isOpen={sidebarOpen}
         setIsOpen={setSidebarOpen}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
       {/* Main Content */}
@@ -461,7 +608,12 @@ function App() {
            <div className="grid gap-5">
               {filteredQuestions.length > 0 ? (
                 filteredQuestions.map((q) => (
-                  <QuestionCard key={q.id} question={q} />
+                  <QuestionCard 
+                    key={q.id} 
+                    question={q} 
+                    userApiKey={userApiKey} 
+                    onOpenSettings={() => setIsSettingsOpen(true)}
+                  />
                 ))
               ) : (
                 <div className="text-center py-20 bg-white rounded-xl border border-dashed border-slate-300">
