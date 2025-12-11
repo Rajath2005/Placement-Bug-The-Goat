@@ -1,12 +1,20 @@
 import { GoogleGenAI } from "@google/genai";
 import { GeneratedAnswer } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Access the key. Vite replaces process.env.API_KEY with the string value at build time.
+const apiKey = process.env.API_KEY;
 
 export const getAnswerForQuestion = async (
   questionText: string,
   contextTag: string
 ): Promise<GeneratedAnswer> => {
+  // Check if the key was actually injected during the build
+  if (!apiKey) {
+    throw new Error("API Key is missing. Go to Netlify > Site settings > Environment variables, add 'API_KEY', and trigger a new deploy.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+
   try {
     const model = 'gemini-2.5-flash';
     
@@ -33,14 +41,16 @@ export const getAnswerForQuestion = async (
 
     const fullText = response.text || "No response generated.";
     
-    // Simple parsing to separate code from text if needed, 
-    // but returning full markdown text is usually better for the UI to handle.
     return {
       text: fullText,
     };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini API Error:", error);
-    throw new Error("Failed to fetch answer. Please check your API key or internet connection.");
+    // Provide more specific error messages
+    if (error.message && (error.message.includes('403') || error.message.includes('key'))) {
+        throw new Error("Invalid API Key. Please check that your Google AI Studio key is correct in Netlify settings.");
+    }
+    throw new Error(`Failed to fetch answer: ${error.message || "Unknown error"}`);
   }
 };
